@@ -10,7 +10,6 @@ in data loss.
 2) Save a new file name
 3) Run the script
 
-For any questions contact ema@legal-aid.org
 '''
 
 
@@ -102,4 +101,5 @@ with pd.ExcelWriter(write_path, engine='openpyxl') as writer:
     pivot_appear.to_excel(writer, sheet_name='Case_Appearance', index=False)
     pivot_matter.to_excel(writer, sheet_name='Matter', index=False)
     pivot_intcharge.to_excel(writer, sheet_name='Init_Top_Charge', index=False)
+
 
