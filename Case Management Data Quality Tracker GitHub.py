@@ -20,8 +20,8 @@ import openpyxl as ox
 
 #Update file paths
 
-directory = 'C:/Users/ema/OneDrive - The Legal Aid Society/Documents/SQL Server Management Studio/LM Data Quality Tracker/Archive'
-write_path = 'C:/Users/ema/OneDrive - The Legal Aid Society/Documents/PycharmProjects LAS/Litigation Support Data Quality Tracker/Data Quality Dashboard 3.3.26.xlsx'
+directory = 'C:/Users/ema/Documents/SQL Server Management Studio/LM Data Quality Tracker/Archive'
+write_path = 'C:/Users/ema/Documents/PycharmProjects LAS/Litigation Support Data Quality Tracker/Data Quality Dashboard 3.3.26.xlsx'
 
 data_frames_appear = []
 data_frames_matter = []
@@ -102,3 +102,4 @@ with pd.ExcelWriter(write_path, engine='openpyxl') as writer:
     pivot_appear.to_excel(writer, sheet_name='Case_Appearance', index=False)
     pivot_matter.to_excel(writer, sheet_name='Matter', index=False)
     pivot_intcharge.to_excel(writer, sheet_name='Init_Top_Charge', index=False)
+
