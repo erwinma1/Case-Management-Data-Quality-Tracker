@@ -10,7 +10,6 @@ in data loss.
 2) Save a new file name
 3) Run the script
 
-For any questions contact ema@legal-aid.org
 '''
 
 
@@ -19,9 +18,9 @@ import pandas as pd
 import openpyxl as ox
 
 #Update file paths
-directory = 'C:/Users/ema/PycharmProjects LAS/LM Data Quality Tracker/Archive'
-write_path = 'C:/Users/ema/PycharmProjects LAS/Litigation Support Data Quality Tracker/Data Quality Dashboard 4.9.26.xlsx'
-test_path = 'C:/Users/ema/Documents/PycharmProjects LAS/Litigation Support Data Quality Tracker/Data Quality Case Appearance Error 4.9.26.xlsx'
+directory = 'C:/Users/ema/PycharmProjects/LM Data Quality Tracker/Archive'
+write_path = 'C:/Users/ema/PycharmProjects/Litigation Support Data Quality Tracker/Data Quality Dashboard 4.9.26.xlsx'
+test_path = 'C:/Users/ema/Documents/PycharmProjects/Litigation Support Data Quality Tracker/Data Quality Case Appearance Error 4.9.26.xlsx'
 
 #----------------- Process LM NCD and Init Charge Data ---------------#
 #Extract data from LM and weekly cleaning lists
@@ -75,7 +74,7 @@ for file in os.listdir(ctc_dir):
             print(f"Error reading {file}: {e}")
 
 #----------------- Process Active Case Backlog  ---------------#
-ncd_dir = 'C:/Users/ema/Documents/PycharmProjects LAS/LM Cleaning and Notes Joining/Inputs/New File/Archive'
+ncd_dir = 'C:/Users/ema/Documents/PycharmProjects/LM Cleaning and Notes Joining/Inputs/New File/Archive'
 
 data_frames_ncd = []
 
