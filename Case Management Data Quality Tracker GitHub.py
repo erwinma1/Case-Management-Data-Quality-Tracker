@@ -6,10 +6,11 @@ summary statistics and charts from the Data Quality Team.
 Data collection began in Nov 2025. Previous dates are undercounted due to updated_by fields being overwritten resulting
 in data loss.
 
-1) Extract the data (monthly) from SQL into the directory folder
+1) Extract the data (every 2 weeks) from SQL into the directory folder
 2) Save a new file name
 3) Run the script
 
+For any questions contact ema@legal-aid.org
 '''
 
 
@@ -18,9 +19,12 @@ import pandas as pd
 import openpyxl as ox
 
 #Update file paths
+directory = 'C:/Users/ema/PycharmProjects LAS/LM Data Quality Tracker/Archive'
+write_path = 'C:/Users/ema/PycharmProjects LAS/Litigation Support Data Quality Tracker/Data Quality Dashboard 4.9.26.xlsx'
+test_path = 'C:/Users/ema/Documents/PycharmProjects LAS/Litigation Support Data Quality Tracker/Data Quality Case Appearance Error 4.9.26.xlsx'
 
-directory = 'C:/Users/ema/Documents/SQL Server Management Studio/LM Data Quality Tracker/Archive'
-write_path = 'C:/Users/ema/Documents/PycharmProjects LAS/Litigation Support Data Quality Tracker/Data Quality Dashboard 3.3.26.xlsx'
+#----------------- Process LM NCD and Init Charge Data ---------------#
+#Extract data from LM and weekly cleaning lists
 
 data_frames_appear = []
 data_frames_matter = []
@@ -46,6 +50,62 @@ for file in os.listdir(directory):
 
         except Exception as e:
             print(f"Skipping {file}: e")
+
+
+#----------------- Process D3 Dashboard Data ---------------#
+#Process data extract files from D3 Dashboard
+ctc_dir = 'C:/Users/ema/Documents/SQL Server Management Studio/LM CDP Dashboard No Current Top Charge/Dashboard Error Extracts'
+
+data_frames_ctc_error = []
+
+#Read and stack files
+for file in os.listdir(ctc_dir):
+    if file.endswith('.xlsx'):
+        ctc_path = os.path.join(ctc_dir, file)
+
+        try:
+            df_ctc_error = pd.read_excel(ctc_path, sheet_name='Export', skipfooter=3)
+
+            creation_time = os.path.getctime(ctc_path)
+            df_ctc_error['file_created_date'] = pd.to_datetime(creation_time, unit='s')
+
+            data_frames_ctc_error.append(df_ctc_error)
+
+        except Exception as e:
+            print(f"Error reading {file}: {e}")
+
+#----------------- Process Active Case Backlog  ---------------#
+ncd_dir = 'C:/Users/ema/Documents/PycharmProjects LAS/LM Cleaning and Notes Joining/Inputs/New File/Archive'
+
+data_frames_ncd = []
+
+for file in os.listdir(ncd_dir):
+    if file.endswith('.xlsx'):
+        ncd_path = os.path.join(ncd_dir, file)
+
+        try:
+            df_ncd = pd.read_excel(ncd_path)
+
+            ncd_creation_time = os.path.getctime(ncd_path)
+            df_ncd['file_created_date'] = pd.to_datetime(ncd_creation_time, unit='s')
+
+            data_frames_ncd.append(df_ncd)
+
+        except Exception as e:
+            print(f"Error reading {file}: {e}")
+
+data_ncd = pd.concat(data_frames_ncd, ignore_index=True)
+data_ncd['date_opened'] = pd.to_datetime(data_ncd['date_opened'], format='%m/%d/%Y %H:%M', errors='coerce')
+data_ncd['latest_appear_date'] = pd.to_datetime(data_ncd['latest_appear_date'], format='%m/%d/%Y %H:%M', errors='coerce')
+data_ncd = data_ncd.sort_values(by='file_created_date', ascending=False)
+
+pivot_ncd = pd.DataFrame(data=data_ncd, columns=['matter_key', 'latest_appear_date', ]) # 'date_opened','file_created_date'
+pivot_ncd = pivot_ncd.drop_duplicates(subset=['matter_key'], keep='first')
+pivot_ncd['latest_appear_date'] = pivot_ncd['latest_appear_date'].dt.to_period('Y').dt.to_timestamp()
+#pivot_ncd['file_created_date'] = pivot_ncd['file_created_date'].dt.to_period('M').dt.to_timestamp()
+pivot_ncd = pd.pivot_table(data=pivot_ncd, values='matter_key', index=['latest_appear_date'], aggfunc='count')
+pivot_ncd = pivot_ncd.reset_index()
+
 
 #------------------Format Case Appearance Data------------------#
 data_appear = pd.concat(data_frames_appear)
@@ -95,11 +155,25 @@ pivot_intcharge = pd.pivot_table(data=pivot_intcharge, values='matter_key', inde
 
 pivot_intcharge = pivot_intcharge.reset_index()
 
+
+#------------------ Format Curr Top Charge Data ------------------#
+data_ctc_error = pd.concat(data_frames_ctc_error)
+pivot_ctc_error = data_ctc_error
+
+pivot_ctc_error['file_created_date'] = pd.to_datetime(pivot_ctc_error['file_created_date'])
+pivot_ctc_error = data_ctc_error.sort_values(by='file_created_date', ascending=False)
+pivot_ctc_error = pd.DataFrame(data=pivot_ctc_error, columns=['docket_number','file_created_date'])
+
+pivot_ctc_error = pd.pivot_table(pivot_ctc_error, values='docket_number', index='file_created_date', aggfunc='count')
+pivot_ctc_error = pivot_ctc_error.rename(columns={'docket_number': 'ctc_error_count'})
+pivot_ctc_error = pivot_ctc_error.reset_index()
+
 #------------------------- Write File --------------------------#
 
+#write dashboard
 with pd.ExcelWriter(write_path, engine='openpyxl') as writer:
-    pivot_appear.to_excel(writer, sheet_name='Case_Appearance', index=False)
-    pivot_matter.to_excel(writer, sheet_name='Matter', index=False)
-    pivot_intcharge.to_excel(writer, sheet_name='Init_Top_Charge', index=False)
-
-
+    pivot_appear.to_excel(writer, sheet_name='Case_Appearance_Corrections', index=False)
+    pivot_matter.to_excel(writer, sheet_name='Matter_Corrections', index=False)
+    pivot_intcharge.to_excel(writer, sheet_name='Init_Top_Charge_Corrections', index=False)
+    pivot_ctc_error.to_excel(writer, sheet_name='Curr_Top_Charge_Errors', index=False)
+    pivot_ncd.to_excel(writer, sheet_name='NCD_Error_Backlog', index=False)
